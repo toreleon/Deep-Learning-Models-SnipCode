@@ -13,7 +13,10 @@ red_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-
 white_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
 
 
-class WineDataReader:
+class WineDataReader():
+    """
+    Class for reading the data from the CSV file and create the input and target tensors for the neural network.
+    """
     def __init__(self, red_data_path: str, white_data_path: str) -> None:
         self.red_data_path = red_data_path
         self.white_data_path = white_data_path
@@ -95,8 +98,8 @@ class ANNClassifier(ANN):
     # Override the train method to use validation set.
     def train(
         self,
-        training_set=(x_train, y_train),
-        validation_set=(x_val, y_val),
+        training_set: tuple,
+        validation_set: tuple,
         batch_size: int = 32,
         epochs: int = 1000,
         lr: float = 0.05,
