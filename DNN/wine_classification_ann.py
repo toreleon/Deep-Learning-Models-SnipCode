@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-# from ann import ANN
+from ann import ANN
 
 
 # Read the data from the CSV file
@@ -13,7 +13,7 @@ red_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-
 white_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
 
 
-class WineDataReader():
+class WineDataReader:
     def __init__(self, red_data_path: str, white_data_path: str) -> None:
         self.red_data_path = red_data_path
         self.white_data_path = white_data_path
@@ -28,7 +28,7 @@ class WineDataReader():
         red = pd.read_csv(self.red_data_path, sep=";")
         white = pd.read_csv(self.white_data_path, sep=";")
         return red, white
-    
+
     def _create_label(self, red: pd.DataFrame, white: pd.DataFrame) -> tuple:
         """
         Create label for 2 dataset with red = 1 and white = 0 and merge them.
@@ -73,6 +73,7 @@ class WineDataReader():
             torch.from_numpy(test["label"].values.reshape(-1, 1)).float(),
         )
         return x_train, y_train, x_val, y_val, x_test, y_test
+
 
 # Create the ANN architecture with validation set.
 class ANNClassifier(ANN):
@@ -150,7 +151,9 @@ class ANNClassifier(ANN):
 
 if __name__ == "__main__":
     # Calculate the accuracy of the model on the test set.
-    x_train, y_train, x_val, y_val, x_test, y_test = WineDataReader(red_data_path, white_data_path).create_dataset()
+    x_train, y_train, x_val, y_val, x_test, y_test = WineDataReader(
+        red_data_path, white_data_path
+    ).create_dataset()
     model = ANNClassifier(input_size=12, output_size=1, hidden_size=64)
     model.train(
         training_set=(x_train, y_train),
