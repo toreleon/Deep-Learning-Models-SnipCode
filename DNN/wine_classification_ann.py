@@ -4,48 +4,77 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from ann import ANN
+# from ann import ANN
 
 
 # Read the data from the CSV file
+red_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
-red = pd.read_csv(
-    "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
-    sep=";",
-)
-white = pd.read_csv(
-    "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv",
-    sep=";",
-)
+white_data_path = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
 
-# Create label for 2 dataset with red = 1 and white = 0 and merge them.
-red["label"] = 1
-white["label"] = 0
-dataset = pd.concat([red, white], ignore_index=True)
 
-# Split the dataset into training, develop and test set with 80%/10%/10% ratio.
-train, dev, test = np.split(
-    dataset.sample(frac=1), [int(0.8 * len(dataset)), int(0.9 * len(dataset))]
-)
-print(len(train), len(dev), len(test))
+class WineDataReader():
+    def __init__(self, red_data_path: str, white_data_path: str) -> None:
+        self.red_data_path = red_data_path
+        self.white_data_path = white_data_path
 
-# Create the input and target tensors for the neural network.
-x_train, y_train = (
-    torch.from_numpy(train.drop(["label"], axis=1).values).float(),
-    torch.from_numpy(train["label"].values.reshape(-1, 1)).float(),
-)
-x_val, y_val = (
-    torch.from_numpy(dev.drop(["label"], axis=1).values).float(),
-    torch.from_numpy(dev["label"].values.reshape(-1, 1)).float(),
-)
-x_test, y_test = (
-    torch.from_numpy(test.drop(["label"], axis=1).values).float(),
-    torch.from_numpy(test["label"].values.reshape(-1, 1)).float(),
-)
+    def _read_data(self) -> tuple:
+        """
+        Read the data from the CSV file
+        :param red_data_path: path to the red data
+        :param white_data_path: path to the white data
+        :return: red and white data
+        """
+        red = pd.read_csv(self.red_data_path, sep=";")
+        white = pd.read_csv(self.white_data_path, sep=";")
+        return red, white
+    
+    def _create_label(self, red: pd.DataFrame, white: pd.DataFrame) -> tuple:
+        """
+        Create label for 2 dataset with red = 1 and white = 0 and merge them.
+        :param red: red data
+        :param white: white data
+        :return: red and white data
+        """
+        red["label"] = 1
+        white["label"] = 0
+        dataset = pd.concat([red, white], ignore_index=True)
+        return dataset
+
+    def _split_data(self, dataset: pd.DataFrame) -> tuple:
+        """
+        Split the dataset into training, develop and test set with 80%/10%/10% ratio.
+        :param dataset: dataset
+        :return: training, develop and test set
+        """
+        train, dev, test = np.split(
+            dataset.sample(frac=1), [int(0.8 * len(dataset)), int(0.9 * len(dataset))]
+        )
+        return train, dev, test
+
+    def create_dataset(self) -> tuple:
+        """
+        Create the input and target tensors for the neural network.
+        :return: input and target tensors
+        """
+        red, white = self._read_data()
+        dataset = self._create_label(red, white)
+        train, dev, test = self._split_data(dataset)
+        x_train, y_train = (
+            torch.from_numpy(train.drop(["label"], axis=1).values).float(),
+            torch.from_numpy(train["label"].values.reshape(-1, 1)).float(),
+        )
+        x_val, y_val = (
+            torch.from_numpy(dev.drop(["label"], axis=1).values).float(),
+            torch.from_numpy(dev["label"].values.reshape(-1, 1)).float(),
+        )
+        x_test, y_test = (
+            torch.from_numpy(test.drop(["label"], axis=1).values).float(),
+            torch.from_numpy(test["label"].values.reshape(-1, 1)).float(),
+        )
+        return x_train, y_train, x_val, y_val, x_test, y_test
 
 # Create the ANN architecture with validation set.
-
-
 class ANNClassifier(ANN):
     """
     ANN Classifier with validation set.
@@ -121,6 +150,7 @@ class ANNClassifier(ANN):
 
 if __name__ == "__main__":
     # Calculate the accuracy of the model on the test set.
+    x_train, y_train, x_val, y_val, x_test, y_test = WineDataReader(red_data_path, white_data_path).create_dataset()
     model = ANNClassifier(input_size=12, output_size=1, hidden_size=64)
     model.train(
         training_set=(x_train, y_train),
